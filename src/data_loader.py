@@ -31,32 +31,43 @@ logger = logging.getLogger(__name__)
         # TDA Processor (can be heavy, may want to disable for massive data if too slow)
         self.tda_processor = FeatureProcessor(embedding_dim=3, embedding_delay=1)
 
-    def fetch_data(self, ticker_symbol: str) -> pd.DataFrame:
-        """Downloads full history for a single ticker."""
-        logger.info(f"Downloading data for {ticker_symbol}...")
-        df = yf.download(ticker_symbol, start="2018-01-01", end="2025-01-01", auto_adjust=True, progress=False)
+    def fetch_batch_data(self) -> pd.DataFrame:
+        """
+        Downloads data for ALL tickers in parallel (Much faster).
+        Returns a MultiIndex DataFrame (Price, Ticker).
+        """
+        if not self.tickers: return pd.DataFrame()
+        logger.info(f"Batch downloading {len(self.tickers)} tickers (2018-2025)...")
         
-        # Robust Flattening (same as before)
-        if isinstance(df.columns, pd.MultiIndex):
-            new_cols = []
-            standard_cols = {'Open', 'High', 'Low', 'Close', 'Volume', 'Adj Close'}
-            flat_cols = df.columns.to_flat_index()
-            for c in flat_cols:
-                found_name = None
-                for part in c:
-                    if part in standard_cols:
-                        found_name = part
-                        break
-                if found_name:
-                    new_cols.append(found_name)
-                else:
-                    new_cols.append(str(c[0]))
-            df.columns = new_cols
-        elif len(df.columns) > 0 and isinstance(df.columns[0], tuple):
-             df.columns = [c[0] for c in df.columns]
+        # Chunking downloads to avoid URI too long errors or rate limits for huge lists
+        chunk_size = 100
+        all_dfs = []
+        
+        for i in range(0, len(self.tickers), chunk_size):
+            chunk = self.tickers[i:i+chunk_size]
+            logger.info(f"Downloading chunk {i}-{i+len(chunk)}...")
+            try:
+                # Group by Ticker to make extraction easier: df[Ticker] -> DataFrame
+                df = yf.download(chunk, start="2018-01-01", end="2025-01-01", group_by='ticker', auto_adjust=True, progress=False, threads=True)
+                if not df.empty:
+                    all_dfs.append(df)
+            except Exception as e:
+                logger.error(f"Failed chunk {i}: {e}")
+        
+        if not all_dfs: return pd.DataFrame()
+        
+        # Concat along columns (axis=1) if they are wide (Price, Ticker) format... 
+        # Wait, concat(axis=1) might align dates automatically.
+        full_df = pd.concat(all_dfs, axis=1)
+        full_df.ffill(inplace=True)
+        return full_df
 
-        df.ffill(inplace=True)
-        return df
+    def process_single_ticker_data(self, df_ticker: pd.DataFrame) -> pd.DataFrame:
+        """Helper to process a single ticker's worth of data from the batch."""
+        # Fix columns if needed (batch download usually gives Open/High/Low/Close directly)
+        # But yf.download(group_by='ticker') returns columns: Open, High, Low, Close...
+        # So df_ticker is already clean.
+        return self.feature_engineering(df_ticker)
 
     def feature_engineering(self, df: pd.DataFrame) -> pd.DataFrame:
         """Adds Technical Indicators (RSI, MACD) and Targets."""

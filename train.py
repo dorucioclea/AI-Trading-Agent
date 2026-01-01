@@ -8,9 +8,10 @@ import os
 
 from src.data_loader import MVPDataLoader
 from src.lstm_model import LSTMPredictor
+from src.ticker_utils import get_extended_tickers
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("TrainMVP")
+logger = logging.getLogger("TrainMassive")
 
 def main():
     # 0. Configuration
@@ -25,11 +26,15 @@ def main():
         PRECISION = "32-true"
 
     MAX_EPOCHS = 50
-    TICKER = "AAPL"
+    
+    # SCALING UP: 500+ Tickers (S&P 500 + Nifty 50)
+    # Caution: 5000 is risky on free Colab RAM/Time. 
+    # We default to ~550 (S&P + Nifty) which is "Massive" compared to 1.
+    TICKERS = get_extended_tickers(limit=None) 
     
     # 1. Data Loading
-    logger.info("Loading Data...")
-    loader = MVPDataLoader(ticker=TICKER, window_size=50)
+    logger.info(f"Loading Massive Data for {len(TICKERS)} tickers...")
+    loader = MVPDataLoader(tickers=TICKERS, window_size=50)
     splits = loader.get_data_splits()
     
     X_train, y_train = splits['train']
@@ -39,9 +44,13 @@ def main():
     train_dataset = TensorDataset(torch.FloatTensor(X_train), torch.LongTensor(y_train))
     val_dataset = TensorDataset(torch.FloatTensor(X_val), torch.LongTensor(y_val))
     
-    # 2. Model Setup
+    # High-Performance Loader
+    train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=2, persistent_workers=True)
+    val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=2, persistent_workers=True)
+    
+    # 2. Model Setup (Deep LSTM)
     input_dim = X_train.shape[2]
-    model = LSTMPredictor(input_dim=input_dim, hidden_dim=128, num_layers=2, output_dim=3) # Increased hidden/layers for "Best Model"
+    model = LSTMPredictor(input_dim=input_dim, hidden_dim=256, num_layers=3, output_dim=3) # Increased hidden/layers for "Best Model"
     
     # 3. Callbacks
     checkpoint_callback = ModelCheckpoint(

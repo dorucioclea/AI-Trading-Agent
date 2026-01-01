@@ -6,7 +6,7 @@ from typing import Tuple, Dict, Optional
 from sklearn.preprocessing import StandardScaler
 from ta.momentum import RSIIndicator
 from ta.trend import MACD
-from .tda_features import FeatureProcessor
+# from .tda_features import FeatureProcessor # TDA disabled for Massive Scale speed
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -30,7 +30,7 @@ class MVPDataLoader:
         self.window_size = window_size
         self.scalers = feature_scalers if feature_scalers else {}
         # TDA Processor (can be heavy, may want to disable for massive data if too slow)
-        self.tda_processor = FeatureProcessor(embedding_dim=3, embedding_delay=1)
+        # self.tda_processor = FeatureProcessor(embedding_dim=3, embedding_delay=1) # Disabled
 
     def fetch_batch_data(self) -> pd.DataFrame:
         """
@@ -164,9 +164,35 @@ class MVPDataLoader:
         all_X_val, all_y_val = [], []
         all_X_test, all_y_test = [], []
         
+        # 1. Fetch All Data (Batch)
+        full_df = self.fetch_batch_data()
+        
+        if full_df.empty:
+            raise ValueError("No data returned from batch download.")
+            
+        # 2. Iterate and Process
+        # Handle Single Ticker vs Multi-Ticker structure from yfinance
+        is_multi_index = isinstance(full_df.columns, pd.MultiIndex)
+        
+        processed_count = 0
+        
         for t in self.tickers:
             try:
-                df = self.fetch_data(t)
+                # Extract Ticker Data
+                if is_multi_index:
+                    if t in full_df.columns.get_level_values(0):
+                        df = full_df[t].copy()
+                    else:
+                        continue # Ticker failed to download
+                else:
+                    # If single ticker and not multi-index, the whole DF is that ticker
+                    # But verify we only expected 1 ticker
+                    if len(self.tickers) == 1:
+                        df = full_df.copy()
+                    else:
+                        continue 
+
+                # Process
                 df = self.feature_engineering(df)
                 if df.empty: continue
                 
@@ -183,6 +209,7 @@ class MVPDataLoader:
                 if len(x_tr) > 0:
                     all_X_train.append(x_tr)
                     all_y_train.append(y_tr)
+                    processed_count += 1
                 if len(x_v) > 0:
                     all_X_val.append(x_v)
                     all_y_val.append(y_v)
@@ -193,6 +220,10 @@ class MVPDataLoader:
             except Exception as e:
                 logger.error(f"Error processing {t}: {e}")
                 continue
+        
+        if processed_count == 0:
+            # If no tickers processed successfully
+             logger.error("Zero tickers processed successfully.")
         
         # Concatenate
         if not all_X_train: raise ValueError("No training data collected!")

@@ -50,7 +50,7 @@ def objective(trial):
     early_stop = EarlyStopping(monitor="val_loss", patience=5, mode="min")
     
     trainer = pl.Trainer(
-        max_epochs=10, # Short epochs for tuning
+        max_epochs=3, # Reduced for rapid testing (was 10)
         accelerator="auto",
         devices=1, 
         enable_checkpointing=False,
@@ -69,7 +69,7 @@ if __name__ == "__main__":
     # Global Data Load (Run once)
     print("Loading Data for Tuning...")
     # Use a moderate number of tickers for tuning speed (e.g. S&P 100)
-    TICKERS = get_extended_tickers(limit=100) 
+    TICKERS = get_extended_tickers(limit=50) # Reduced to 50 for speed 
     loader = MVPDataLoader(tickers=TICKERS, window_size=50)
     splits = loader.get_data_splits()
     
@@ -81,7 +81,7 @@ if __name__ == "__main__":
     
     # Optimization
     study = optuna.create_study(direction="minimize", pruner=optuna.pruners.MedianPruner())
-    study.optimize(objective, n_trials=20, timeout=None) # 20 Trials
+    study.optimize(objective, n_trials=5, timeout=None) # Reduced to 5 Trials
     
     print("\n" + "="*40)
     print("🏆 Best Trial:")

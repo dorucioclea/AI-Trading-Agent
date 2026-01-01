@@ -7,7 +7,10 @@ yfinance
 ta
 torch
 pytorch-lightning
+lightning
 matplotlib
 scikit-learn
 optuna
 optuna-integration
+lxml
+

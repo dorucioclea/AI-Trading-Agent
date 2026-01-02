@@ -14,8 +14,9 @@ class SniperEngine:
     
     def __init__(self):
         self.loader = IntradayDataLoader()
-        # Focusing on High Beta / High Liquid stocks for Intraday
-        self.universe = ['NVDA', 'TSLA', 'AMD', 'AAPL', 'MSFT', 'AMZN', 'GOOGL', 'META', 'NFLX', 'QCOM']
+        # Full Indian Market (Nifty 100 + Key Midcaps)
+        from src.ticker_utils import get_nifty_total_market
+        self.universe = ["^NSEI", "^NSEBANK"] + get_nifty_total_market()
         
     def get_vote(self, ticker: str, df: pd.DataFrame) -> dict:
         """
@@ -85,19 +86,29 @@ class SniperEngine:
         logger.info(f"Scanning {len(self.universe)} tickers for Sniper Setups (15m)...")
         
         for t in self.universe:
+            # Correct L&T Ticker
+            if t == "L&T.NS": t = "LT.NS"
+
             df = self.loader.fetch_data(t, interval='15m')
             df = self.loader.add_technical_indicators(df)
             
             vote = self.get_vote(t, df)
             
-            if vote['Signal'] != 'NEUTRAL':
-                results.append({
-                    'Ticker': t,
-                    'Signal': vote['Signal'],
-                    'Confidence': vote['Confidence'],
-                    'Reason': vote['Reason'],
-                    'Price': df.iloc[-1]['Close']
-                })
+            # Safe Price Extraction
+            current_price = 0.0
+            if df is not None and not df.empty:
+                try:
+                    current_price = df.iloc[-1]['Close']
+                except: pass
+
+            # Always append result, even if Neutral (for Search visibility)
+            results.append({
+                'Ticker': t,
+                'Signal': vote['Signal'],
+                'Confidence': vote['Confidence'],
+                'Reason': vote['Reason'],
+                'Price': current_price
+            })
                 
         return results
 

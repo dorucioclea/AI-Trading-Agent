@@ -59,7 +59,14 @@ class IntradayDataLoader:
             
             # Flatten MultiIndex columns if present (common in new yfinance)
             if isinstance(df.columns, pd.MultiIndex):
-                df.columns = df.columns.get_level_values(0)
+                # Try to find the level with 'Close', 'Open', etc.
+                if 'Close' in df.columns.get_level_values(0):
+                    df.columns = df.columns.get_level_values(0)
+                elif 'Close' in df.columns.get_level_values(1):
+                    df.columns = df.columns.get_level_values(1)
+                    
+            # Handle Duplicate Columns (rare but possible)
+            df = df.loc[:, ~df.columns.duplicated()]
                 
             # Standardize Columns
             required_cols = ['Open', 'High', 'Low', 'Close', 'Volume']
@@ -70,6 +77,8 @@ class IntradayDataLoader:
             
             # Clean Data
             df = df[required_cols].copy()
+            for col in required_cols:
+                df[col] = pd.to_numeric(df[col], errors='coerce')
             df.dropna(inplace=True)
             
             if len(df) < 50:

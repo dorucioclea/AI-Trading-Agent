@@ -90,8 +90,31 @@ class HybridBrain:
                      decision['Confidence'] = sniper['Confidence']
                      decision['Rational'].append(f"Regime: Normal. Following Momentum.")
                  else:
-                     continue # Nothing interesting
+                     # Default logic for NEUTRAL/WAIT
+                     decision['Action'] = 'WAIT'
+                     decision['Confidence'] = 0.0
+                     decision['Rational'].append("Market is efficient. No edge detected.")
             
+            # --- Chart Data Injection (Sparkline) ---
+            # We need to fetch the dataframe again to get the history.
+            # In a production system, we would cache this in the Experts to avoid re-fetching.
+            try:
+                hist_df = self.sniper_expert.loader.fetch_data(t, interval='15m', period='5d')
+                if hist_df is not None and not hist_df.empty:
+                    # Keep last 60 points (Better Resolution)
+                    subset = hist_df.tail(60).reset_index()
+                    decision['History'] = [
+                        {
+                            "Time": row['Datetime'].strftime('%H:%M') if pd.notnull(row['Datetime']) else str(row['Datetime']), 
+                            "Close": round(row['Close'], 2),
+                            "Volume": int(row['Volume'])
+                        } 
+                        for _, row in subset.iterrows()
+                    ]
+            except Exception as e:
+                logger.warning(f"Could not fetch history for chart {t}: {e}")
+                decision['History'] = []
+
             final_decisions.append(decision)
             
         return final_decisions

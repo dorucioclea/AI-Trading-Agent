@@ -38,6 +38,26 @@ Run the specific engine you need, or the Master Brain:
 python scan_hybrid.py
 ```
 
+## 💻 Live Dashboard (Phase 4)
+## 🚀 Quick Start
+One command to run the Backend (Brain) + Frontend (Dashboard):
+```bash
+cd frontend
+npm run start
+```
+*Access the Dashboard at:* `http://localhost:5173`
+
+## ✨ Features (v2.0 "Legendary")
+- **Hybrid Brain**: Expert Voting System (Momentum Sniper + Volatility Strategist).
+- **Scale**: Scans **Nifty 100** stocks in real-time.
+- **Simulation Engine**: Built-in Paper Trading game. The AI trades its own signals. Watch it level up from "Novice" to "Grandmaster" based on P&L.
+- **Apple Aesthetic**: Premium "Glassmorphic" UI with Framer Motion animations.
+- **Live Charts**: Sparklines for every ticker in the Details view.
+
+## 🧠 Architecture
+- **Backend**: Python (FastAPI, Pandas, NumPy). `scan_hybrid.py` is the Core.
+- **Frontend**: React (TypeScript, Vite, Tailwind). `Dashboard.tsx` is the View.
+- **Data**: Live feed via `yfinance`.
 ## 📊 Performance (Backtest 2018-2025)
 - **Neural Networks (LSTM)**: Failed (51% Accuracy).
 - **Daily Strategy**: Positive Expectancy (0.07%) but low hit rate.

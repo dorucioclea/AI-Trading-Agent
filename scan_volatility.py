@@ -20,8 +20,9 @@ class VolatilityEngine:
     
     def __init__(self):
         self.loader = MVPDataLoader()
-        # We scan a subset of liquid tickers for Options
-        self.universe = ['SPY', 'QQQ', 'IWM', 'NVDA', 'TSLA', 'AMD', 'AAPL', 'MSFT', 'AMZN', 'GOOGL', 'META', 'NFLX', 'JPM', 'GS']
+        # Full Indian Market
+        from src.ticker_utils import get_nifty_total_market
+        self.universe = ["^NSEI", "^NSEBANK"] + get_nifty_total_market()
         
     def calculate_hv_rank(self, df: pd.DataFrame, window: int = 20) -> dict:
         """
@@ -122,14 +123,14 @@ class VolatilityEngine:
 
                 vote = self.get_vote(t, df)
                 
-                if vote['Signal'] != 'NEUTRAL':
-                    results.append({
-                        'Ticker': t,
-                        'Signal': vote['Signal'],
-                        'Confidence': vote['Confidence'],
-                        'Reason': vote['Reason'],
-                        'HV_Rank': f"{vote.get('Reason').split('(')[1].split(')')[0]}" if '(' in vote['Reason'] else 'N/A'
-                    })
+                # Always append result (for Search visibility)
+                results.append({
+                    'Ticker': t,
+                    'Signal': vote['Signal'],
+                    'Confidence': vote['Confidence'],
+                    'Reason': vote['Reason'],
+                    'HV_Rank': f"{vote.get('Reason').split('(')[1].split(')')[0]}" if '(' in vote['Reason'] else 'N/A'
+                })
             except Exception as e:
                 logger.error(f"Error scanning {t}: {e}")
                 continue

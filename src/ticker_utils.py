@@ -30,23 +30,49 @@ def get_sp500_tickers():
         logger.error(f"Failed to fetch S&P 500: {e}")
         return ["AAPL", "MSFT", "GOOGL"] # Fallback
 
+def get_nifty_total_market():
+    """
+    Returns a broad universe of Liquid Indian Stocks (Nifty 100 + Key Midcaps).
+    Expanded for 'Whole Market' feel while maintaining scan speed.
+    """
+    nifty_50 = [
+        "RELIANCE.NS", "TCS.NS", "HDFCBANK.NS", "ICICIBANK.NS", "INFY.NS",
+        "HINDUNILVR.NS", "ITC.NS", "LT.NS", "SBIN.NS", "BHARTIARTL.NS",
+        "KOTAKBANK.NS", "AXISBANK.NS", "BAJFINANCE.NS", "LICI.NS",
+        "ASIANPAINT.NS", "MARUTI.NS", "SUNPHARMA.NS", "TITAN.NS",
+        "ULTRACEMCO.NS", "NTPC.NS", "ONGC.NS", "POWERGRID.NS",
+        "M&M.NS", "ADANIENT.NS", "TATAMOTORS.NS", "COALINDIA.NS",
+        "JSWSTEEL.NS", "TATASTEEL.NS", "NESTLEIND.NS", "WIPRO.NS",
+        "HCLTECH.NS", "TECHM.NS", "INDUSINDBK.NS", "HDFCLIFE.NS",
+        "SBILIFE.NS", "BAJAJFINSV.NS", "GRASIM.NS", "BRITANNIA.NS",
+        "CIPLA.NS", "DIVISLAB.NS", "DRREDDY.NS", "APOLLOHOSP.NS",
+        "HEROMOTOCO.NS", "EICHERMOT.NS", "HINDALCO.NS", "UPL.NS",
+        "BPCL.NS", "TATACONSUM.NS", "ADANIPORTS.NS", "SHRIRAMFIN.NS"
+    ]
+
+    nifty_next_50 = [
+        "HAL.NS", "DLF.NS", "BEL.NS", "VBL.NS", "ZOMATO.NS",
+        "SIEMENS.NS", "TRENT.NS", "PIDILITIND.NS", "IOC.NS",
+        "RECLTD.NS", "PFC.NS", "GAIL.NS", "CHOLAFIN.NS",
+        "BANKBARODA.NS", "CANBK.NS", "PNB.NS", "TVSMOTOR.NS",
+        "HAVELLS.NS", "ABB.NS", "AMBUJACEM.NS", "INDIGO.NS",
+        "NAUKRI.NS", "JIOFIN.NS", "GODREJCP.NS", "VEDL.NS",
+        "DABUR.NS", "SHREECEM.NS", "BERGEPAINT.NS",
+        "ICICIPRULI.NS", "BOSCHLTD.NS", "MOTHERSON.NS",
+        "POLYCAB.NS", "SBICARD.NS", "MARICO.NS", "SRF.NS",
+        "MUTHOOTFIN.NS", "ICICIGI.NS", "COLPAL.NS", "IRCTC.NS",
+        "TORNTPOWER.NS", "LODHA.NS", "JSWENERGY.NS",
+        "MANKIND.NS", "ADANIENSOL.NS", "ADANIGREEN.NS",
+        "ATGL.NS", "DMART.NS", "LTIM.NS"
+    ]
+    
+    fo_universe = list(set(nifty_50 + nifty_next_50))
+    logger.info(f"Loaded {len(fo_universe)} Indian Market tickers.")
+    return fo_universe
+
 def get_nifty50_tickers():
     """Returns top 50 Indian Stocks (NSE) for valid Yahoo Finance symbols."""
-    # Nifty 50 Symbols as of 2024 (Suffix .NS for NSE)
-    tickers = [
-        "RELIANCE.NS", "TCS.NS", "HDFCBANK.NS", "ICICIBANK.NS", "INFY.NS",
-        "BHARTIARTL.NS", "ITC.NS", "SBIN.NS", "LICI.NS", "HINDUNILVR.NS",
-        "LT.NS", "BAJFINANCE.NS", "HCLTECH.NS", "MARUTI.NS", "SUNPHARMA.NS",
-        "ADANIENT.NS", "KOTAKBANK.NS", "TITAN.NS", "ONGC.NS", "TATAMOTORS.NS",
-        "NTPC.NS", "AXISBANK.NS", "ULTRACEMCO.NS", "ADANIPORTS.NS", "POWERGRID.NS",
-        "M&M.NS", "WIPRO.NS", "COALINDIA.NS", "BAJAJFINSV.NS", "ASIANPAINT.NS",
-        "JSWSTEEL.NS", "NESTLEIND.NS", "TATASTEEL.NS", "GRASIM.NS", "TECHM.NS",
-        "HDFCLIFE.NS", "SBILIFE.NS", "BRITANNIA.NS", "INDUSINDBANK.NS", "CIPLA.NS",
-        "TATACONSUM.NS", "DRREDDY.NS", "EICHERMOT.NS", "DIVISLAB.NS", "APOLLOHOSP.NS",
-        "HEROMOTOCO.NS", "BPCL.NS", "SHRIRAMFIN.NS", "HINDALCO.NS", "UPL.NS"
-    ]
-    logger.info(f"Loaded {len(tickers)} Nifty 50 tickers.")
-    return tickers
+    return get_nifty_total_market() # Redirect to larger list
 
 def get_extended_tickers(limit=500):
     """

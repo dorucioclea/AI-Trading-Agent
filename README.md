@@ -19,8 +19,8 @@ A **Directional Prediction LSTM Model** for S&P 500/AAPL stocks, featuring stric
 ### 1. Installation
 ```bash
 # Clone
-git clone https://github.com/your-repo/trading-agent.git
-cd trading-agent
+git clone https://github.com/Junni007/AI-Trading-Agent.git
+cd AI-Trading-Agent
 
 # Install Python requirements
 pip install -r requirements.txt
@@ -31,15 +31,25 @@ npm install
 cd ..
 ```
 
-### 2. Training the Model
-You can train on your laptop (CPU/GPU) or use the included **Colab Notebook**.
+### 2. Hyperparameter Tuning (Optional)
+Find the best model configuration using Optuna.
+```bash
+python src/tune.py
+```
+*   **Resumable**: Saves progress to `optuna_study.db`. Safe to stop and restart.
+*   **Output**: Saves optimized config to `best_hyperparameters.json`.
+
+### 3. Training the Model
+Trains the LSTM model using the best hyperparameters found (or defaults).
 ```bash
 python train.py
 ```
-*   Saves best model to `checkpoints_mvp/`
-*   Exports `final_lstm_model.pth`
+*   **Smart Loading**: Automatically loads `best_hyperparameters.json`.
+*   **Auto-Resume**: If interrupted, restarts from the last `checkpoints_mvp/last.ckpt`.
+*   **Logging**: Detailed logs saved to `training.log`.
+*   **Output**: `final_lstm_model.pth`.
 
-### 3. Run the Web App
+### 4. Run the Web App
 **Terminal 1 (Backend):**
 ```bash
 uvicorn app.main:app --reload
@@ -57,9 +67,10 @@ Go to `http://localhost:3000` to see the dashboard.
 *   **Sharpe Ratio**: Target >1.0
 
 ## 📁 Repository Structure
+*   `src/tune.py`: Optuna hyperparameter optimization.
 *   `src/data_loader.py`: Strict time-split logic.
 *   `src/lstm_model.py`: PyTorch Lightning LSTM.
-*   `train.py`: Training loop with Early Stopping.
-*   `notebooks/`: Google Colab instructions.
+*   `train.py`: Robust training loop with Auto-Resume.
+*   `docs/`: Project Manual and Theory.
 *   `app/`: FastAPI Backend.
 *   `frontend/`: React Dashboard.
